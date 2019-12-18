@@ -94,7 +94,7 @@
                         <span><em>已节省：</em><i>-¥20.00</i></span>
                     </div>
                     <div class="sumbtn">
-                        <a class="sum-btn"  href="getOrderInfo.html"  target="_blank">结算</a>
+                        <a class="sum-btn"  href="javascript:void(0)" @click="toOrder()"   >结算</a>
                     </div>
                 </div>
             </div>
@@ -276,15 +276,21 @@
                 let tmp_carts = ly.store.get("LY_CART");
                 if(tmp_carts != null){
                     for(var i=0;i<tmp_carts.length;i++){
-                        ly.http.post("/cart", {skuId: tmp_carts[i].skuId, num: tmp_carts[i].num});
+                        ly.http.post("/cart", {skuId: tmp_carts[i].skuId, num: tmp_carts[i].num}).then(res=>{
+                            ly.http.get("/cart").then(({data})=>{
+                                this.carts = data;
+                                this.selected = this.carts;
+                            });
+                        })
                     }
                     ly.store.del("LY_CART");
+                }else{
+                    ly.http.get("/cart").then(({data})=>{
+                        this.carts = data;
+                        this.selected = this.carts;
+                    });
                 }
-                ly.http.get("/cart").then(({data})=>{
-                    console.log(data);
-                    this.carts = data;
-                    this.selected = this.carts;
-                });
+
 
             }).catch(()=>{
                 //未登录购物车的查询
@@ -332,6 +338,15 @@
                     //未登录购物车的查询
                     this.carts.splice(index,1); //从this.carts数组中删除这个商品
                     ly.store.set("LY_CART",this.carts);
+                })
+            },
+            toOrder(){
+                ly.verifyUser().then(res=>{
+                    ly.store.set("LY_SELECTED",this.selected);
+                    window.location.href = "/getOrderInfo.html";
+                }).catch(()=>{
+                    //未登录购物车的查询
+                    window.location.href = "/login.html?returnUrl=" + window.location.href;
                 })
             }
         },
